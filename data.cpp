@@ -207,39 +207,6 @@ void data::readyReady()
              i_kanal = i_kanal+4;
              no_module = 1;
          }
-//     if(!pernah_penuh[i_kanal])
-//     {
-//         for(i=0; i<PAKET_BUFF; i++)
-//         {
-//             data_prekirim[i_kanal][i+((p_req2->request_sample%syarat_data)*PAKET_BUFF)] = p_data[i];
-//             cnt_ch[i_kanal]++;
-//             data_save[i_kanal][cnt_ch[i_kanal]] = p_data[i];
-//         }
-//     }
-//     else
-//     {
-//         for(y=0; y<(syarat_data-1); y++)
-//         {
-//             for(i=0; i<PAKET_BUFF; i++)
-//             {
-//                 data_prekirim[i_kanal][i+(y*PAKET_BUFF)] = data_prekirim[i_kanal][i+ ((y+1) * PAKET_BUFF)];
-//             }
-
-//         }
-//        for (i=0; i<PAKET_BUFF; i++)
-//        {
-//          data_prekirim[i_kanal][i + (y*PAKET_BUFF)] = p_data[i];
-//          cnt_ch[i_kanal]++;
-//          data_save[i_kanal][cnt_ch[i_kanal]] = p_data[i];
-//        }
-//     }
-
-//     if (((p_req2->request_sample % syarat_data) + 1) == syarat_data)
-//     {
-//         pernah_penuh[i_kanal] =1;
-////         memcpy(kris.k1,&data_prekirim,datasyarat*(sizeof(float)));
-////         emit kirim();
-//     }
          ////////////////////////////////////////////////////////////////////////////////////////////////////////////
          for (i=0; i<PAKET_BUFF; i++)
         {
@@ -247,22 +214,41 @@ void data::readyReady()
           data_save[i_kanal][cnt_ch[i_kanal]] = p_data[i];
           cnt_cha[i_kanal]++;
           data_prekirim[i_kanal][cnt_cha[i_kanal]] = p_data[i];
-          kris.k1[i_kanal][cnt_cha[i_kanal]] = p_data[i];
+         // kris.k1[i_kanal][cnt_cha[i_kanal]] = p_data[i];
         }
+         //memcpy(kris.k1[i_kanal],&data_prekirim[i_kanal][1],256 * (sizeof(float)));
          ////////////////////////////////////////////////////////////////////////////////////////////////////
     }// while
     if(cnt_cha[3]==2560)
     {
         modul_1_penuh=1;
+        memcpy(kri.k1, &data_prekirim[0][1], 2560 * (sizeof(float)));
+        memcpy(kri.k2, &data_prekirim[1][1], 2560 * (sizeof(float)));
+        memcpy(kri.k3, &data_prekirim[2][1], 2560 * (sizeof(float)));
+        memcpy(kri.k4, &data_prekirim[3][1], 2560 * (sizeof(float)));
     }
     else if(cnt_cha[7]==2560)
     {
         modul_2_penuh=1;
+        memcpy(kri.k5, &data_prekirim[4][1], 2560 * (sizeof(float)));
+        memcpy(kri.k6, &data_prekirim[5][1], 2560 * (sizeof(float)));
+        memcpy(kri.k7, &data_prekirim[6][1], 2560 * (sizeof(float)));
+        memcpy(kri.k8, &data_prekirim[7][1], 2560 * (sizeof(float)));
     }
 
     if((modul_1_penuh&&modul_2_penuh)||(modul_1_penuh&&!modul_2_penuh))
     {
-        emit kirim();
+        qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kemas";
+        QByteArray datagrama = QByteArray(static_cast<char*>((void*)&kri), sizeof(kri));
+
+        sendDataClient1(datagrama);
+        qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kirim";
+        for(i =0; i<JUM_KANAL; i++)//8
+        {
+            qDebug()<<" kanal data= "<<cnt_cha[i];
+            cnt_cha[i]=0;
+        }
+      //  emit kirim();
         modul_1_penuh=0;
         modul_2_penuh=0;
     }
@@ -271,17 +257,7 @@ void data::readyReady()
 
 void data::datamanagement()
 {
-    qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kemas";
-    QByteArray datagrama = QByteArray(static_cast<char*>((void*)&kris), sizeof(kris));
 
-    sendDataClient1(datagrama);
-    qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kirim";
-
-    for(int i =0; i<JUM_KANAL; i++)
-    {
-        qDebug()<<"counter = "<<cnt_cha[i];
-        cnt_cha[i]=0;
-    }
 }
 
 void data::start_database()
