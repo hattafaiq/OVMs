@@ -10,8 +10,7 @@ data::data(QObject *parent) : QObject(parent)
   panjang_buffer_waveform= 10 * 10240 ;
   panjang_buffer_spektrum = MAX_FFT_POINT;
   Temp = new init_setting_k;
-    QFile input("/home/fh/OVMseries/setting.ini");
-    //QFile input("/home/fh/runServer/setup/setting.ini");
+    QFile input("/home/fh/Server_OVM/setting.ini");
     if(input.exists())
     {
        cek_settings(Temp);
@@ -21,7 +20,7 @@ data::data(QObject *parent) : QObject(parent)
        init_setting(Temp);
     }
     count_db = 1;
-    pernah_penuh = 0;
+   // pernah_penuh = 0;
     flagsave=0;
     flagtimestart=0;
     counterCH1=0;
@@ -56,7 +55,6 @@ data::~data()
     m_pWebSocketServer1->close();
     qDeleteAll(Subcribe_wave1.begin(), Subcribe_wave1.end());//paket10
     delete threadku;
-    //delete Temp;
     free_memory();
 }
 void data::free_memory()
@@ -67,13 +65,11 @@ void data::free_memory()
         free(data_save[i]);
         free(data_get[i]);
         free(data_prekirim[i]);
-       // free(x1[i]);
     }
 }
 void data::cek_settings(init_setting_k *Temp)
 {
-    QString pth = "/home/fh/OVMseries/setting.ini";
-   // QString pth = "/home/fh/runServer/setting.ini";
+    QString pth = "/home/fh/Server_OVM/setting.ini";
     QSettings settings(pth, QSettings::IniFormat);
     tmp.dir_ini = settings.value("Dir_ini").toString();
     tmp.modulIP1k = settings.value("IP1").toString();
@@ -82,61 +78,36 @@ void data::cek_settings(init_setting_k *Temp)
     Temp->timerdbk = settings.value("TimeSaveDB").toInt();
     Temp->timereq = settings.value("TimeReq").toInt();
     Temp->timerclient = settings.value("TimeClien").toInt();
-    //Temp->sps = settings.value("SPS").toInt();
     Temp->line_dbSpect = settings.value("Lines").toInt();
-    //Temp->jum_kanal = settings.value("JUM_KANAL").toInt();
     tmp.dir_DB = settings.value("Dir_DB").toString();
 }
 
 void data::flagdatabase()
 {
-    if(flagsave==1)
-        {
-            start_database();
-            flagsave=0;
-        }
-    else
-    {
-        //qDebug()<<"data not save to database";
-    }
+
 }
 
 void data::flagclient()
 {
-    flagtimestart=1;
-    if(flagtimestart==1)
-    {
-        datamanagement();
-        flagtimestart=0;
-    }
-    else
-    {
-       // qDebug()<<"data not send to client";
-    }
+
 }
 
 void data::init_setting(init_setting_k *Temp)
 {
-    QString pth = "/home/fh/OVMseries/setting.ini";
-    //QString pth = "/home/fh/runServer/setting.ini";
+    QString pth = "/home/fh/Server_OVM/setting.ini";
     QSettings settings(pth, QSettings::IniFormat);
     qDebug()<<"tulis";
 
     memset((char *) Temp, 0, sizeof (struct init_setting_k));
-    tmp.dir_DB = QString::fromUtf8("/home/fh/OVMseries/ovm_dbe");
-      //tmp.dir_DB = QString::fromUtf8("/home/fh/runServer/ovm_dbe");
+    tmp.dir_DB = QString::fromUtf8("/home/fh/Server_OVM/ovm_dbe");
     tmp.modulIP1k = QString::fromUtf8("192.168.0.101");
     tmp.modulIP2k = QString::fromUtf8("192.168.0.102");
 
     Temp->line_dbSpect = 800;
     Temp->fmax= 1000;
     Temp->timerdbk =5;
-    //Temp->sps = 2560;
     Temp->timereq = 2;
     Temp->timerclient = 1;
-    //Temp->jum_kanal = 8;
-    //Temp->jum_kanal = settings.value("JUM_KANAL").toInt();
-    //settings.setValue("JUM_KANAL",Temp->jum_kanal);
     settings.setValue("TimeClien",Temp->timerclient);
     settings.setValue("Dir_ini", tmp.dir_ini);
     settings.setValue("IP1",tmp.modulIP1k);
@@ -146,7 +117,6 @@ void data::init_setting(init_setting_k *Temp)
     settings.setValue("Fmax",Temp->fmax);
     settings.setValue("TimeSaveDB",Temp->timerdbk);
     settings.setValue("TimeReq",Temp->timereq);
-   // settings.setValue("SPS",Temp->sps);
 }
 
 void data::set_memory()
@@ -154,21 +124,23 @@ void data::set_memory()
     int i;
     for (i=0; i<JUM_KANAL; i++)
     {
-        data_save[i] = (float *) malloc((((2560/BESAR_PAKET_F)*JUM_KANAL)*BESAR_PAKET*Temp->timerdbk*10) * sizeof(float));
-        memset( (char *) data_save[i], 0, ((((2560/BESAR_PAKET_F)*JUM_KANAL)*BESAR_PAKET*Temp->timerdbk*10)*sizeof(float)));
-        data_get[i] = (float *) malloc(MAX_FFT_POINT * sizeof(float));
-        memset( (char *) data_get[i], 0, MAX_FFT_POINT * sizeof(float));
-        //data_prekirim[i] = (float *) malloc((((2560/BESAR_PAKET_F)*JUM_KANAL)*BESAR_PAKET*Temp->timerdbk*10)* sizeof(float));
-        //memset( (char *) data_prekirim[i], 0, (((2560/BESAR_PAKET_F)*JUM_KANAL)*BESAR_PAKET*Temp->timerdbk*10) * sizeof(float));
+        pernah_penuh[i]=0;
+        datasyarat= 2560;
 
-        data_prekirim[i] = (float *) malloc(((2560*8)+(2560*4)) * sizeof(float));
-        memset( (char *) data_prekirim[i], 0, ((2560*8)+(2560*4)) * sizeof(float));
+        data_save[i] = (float *) malloc(((2560*JUM_KANAL)*10) * sizeof(float));
+        memset( (char *) data_save[i], 0, (((2560*JUM_KANAL)*10)*sizeof(float)));
+        data_get[i] = (float *) malloc(((2560*JUM_KANAL)*10) * sizeof(float));
+        memset( (char *) data_get[i], 0, ((2560*JUM_KANAL)*10) * sizeof(float));
+        data_prekirim[i] = (float *) malloc(((2560*JUM_KANAL)*10) * sizeof(float));
+        memset( (char *) data_prekirim[i], 0, ((2560*JUM_KANAL)*10) * sizeof(float));
     }
 }
 
 
 void data::init_time()
-{
+{ 
+    modul_1_penuh=0;
+    modul_2_penuh=0;
     timer = new QTimer(this);
     QObject::connect(timer,SIGNAL(timeout()),this, SLOT(refresh_plot()));
     timer->start(Temp->timereq*1100);
@@ -176,10 +148,9 @@ void data::init_time()
     QObject::connect(timera,SIGNAL(timeout()),this, SLOT(start_database()));
     timera->start(5000);
     TMclient = new QTimer(this);
-    QObject::connect(TMclient,SIGNAL(timeout()),this, SLOT(datamanagement()));
-    TMclient->start(1000);
-
-   // QObject::connect(this,SIGNAL(trig_client()),this, SLOT(datamanagement()));
+    //QObject::connect(TMclient,SIGNAL(timeout()),this, SLOT(datamanagement()));
+    //TMclient->start(1000);
+    QObject::connect(this,SIGNAL(kirim()),this,SLOT(datamanagement()));
 }
 
 void data::req_UDP()
@@ -207,8 +178,7 @@ void data::readyReady()
     int i_kanal;
     int req;
     int xsps;
-    int i;
-    int datakebutuhan;
+    int i,y;
 
     while (socket->hasPendingDatagrams())
     {
@@ -222,10 +192,9 @@ void data::readyReady()
          req = p_req2->request_sample;
          i_kanal = p_req2->cur_kanal;
          xsps = p_req2->sps;
-         int datasyarat= 2560;
-         //int datayangdiharapkan=2048;
-         penuh = (cnt_ch[i_kanal]%datasyarat)+1;
-         penuh2 = (cnt_cha[i_kanal]%datasyarat)+1;
+
+        // syarat_data = p_req2->sps/PAKET_BUFF;
+       //  qDebug()<<"syarat data: "<<syarat_data;
 
          int no_module = -1;
 
@@ -238,40 +207,80 @@ void data::readyReady()
              i_kanal = i_kanal+4;
              no_module = 1;
          }
-        for (i=0; i<PAKET_BUFF; i++)
+//     if(!pernah_penuh[i_kanal])
+//     {
+//         for(i=0; i<PAKET_BUFF; i++)
+//         {
+//             data_prekirim[i_kanal][i+((p_req2->request_sample%syarat_data)*PAKET_BUFF)] = p_data[i];
+//             cnt_ch[i_kanal]++;
+//             data_save[i_kanal][cnt_ch[i_kanal]] = p_data[i];
+//         }
+//     }
+//     else
+//     {
+//         for(y=0; y<(syarat_data-1); y++)
+//         {
+//             for(i=0; i<PAKET_BUFF; i++)
+//             {
+//                 data_prekirim[i_kanal][i+(y*PAKET_BUFF)] = data_prekirim[i_kanal][i+ ((y+1) * PAKET_BUFF)];
+//             }
+
+//         }
+//        for (i=0; i<PAKET_BUFF; i++)
+//        {
+//          data_prekirim[i_kanal][i + (y*PAKET_BUFF)] = p_data[i];
+//          cnt_ch[i_kanal]++;
+//          data_save[i_kanal][cnt_ch[i_kanal]] = p_data[i];
+//        }
+//     }
+
+//     if (((p_req2->request_sample % syarat_data) + 1) == syarat_data)
+//     {
+//         pernah_penuh[i_kanal] =1;
+////         memcpy(kris.k1,&data_prekirim,datasyarat*(sizeof(float)));
+////         emit kirim();
+//     }
+         ////////////////////////////////////////////////////////////////////////////////////////////////////////////
+         for (i=0; i<PAKET_BUFF; i++)
         {
           cnt_ch[i_kanal]++;
           data_save[i_kanal][cnt_ch[i_kanal]] = p_data[i];
           cnt_cha[i_kanal]++;
           data_prekirim[i_kanal][cnt_cha[i_kanal]] = p_data[i];
-        //  kris.x1[((req%10)*256+i)]=(req%10)*256+i;
-          //qDebug()<<kri.x1[i];
+          kris.k1[i_kanal][cnt_cha[i_kanal]] = p_data[i];
         }
-
+         ////////////////////////////////////////////////////////////////////////////////////////////////////
     }// while
+    if(cnt_cha[3]==2560)
+    {
+        modul_1_penuh=1;
+    }
+    else if(cnt_cha[7]==2560)
+    {
+        modul_2_penuh=1;
+    }
+
+    if((modul_1_penuh&&modul_2_penuh)||(modul_1_penuh&&!modul_2_penuh))
+    {
+        emit kirim();
+        modul_1_penuh=0;
+        modul_2_penuh=0;
+    }
 }//void
 
 
 void data::datamanagement()
 {
     qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kemas";
-    memcpy(kri.k1, &data_prekirim[0][1], 2560 * (sizeof(float)));
-    memcpy(kri.k2, &data_prekirim[1][1], 2560 * (sizeof(float)));
-    memcpy(kri.k3, &data_prekirim[2][1], 2560 * (sizeof(float)));
-    memcpy(kri.k4, &data_prekirim[3][1], 2560 * (sizeof(float)));
-    memcpy(kri.k5, &data_prekirim[4][1], 2560 * (sizeof(float)));
-    memcpy(kri.k6, &data_prekirim[5][1], 2560 * (sizeof(float)));
-    memcpy(kri.k7, &data_prekirim[6][1], 2560 * (sizeof(float)));
-    memcpy(kri.k8, &data_prekirim[7][1], 2560 * (sizeof(float)));
-
-    QByteArray datagrama = QByteArray(static_cast<char*>((void*)&kri), sizeof(kri));
+    QByteArray datagrama = QByteArray(static_cast<char*>((void*)&kris), sizeof(kris));
 
     sendDataClient1(datagrama);
     qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kirim";
-    for(int i =0; i<JUM_KANAL; i++)//8
+
+    for(int i =0; i<JUM_KANAL; i++)
     {
-        cnt_cha[i] =0;
-       // cnt_cha[i] =0;
+        qDebug()<<"counter = "<<cnt_cha[i];
+        cnt_cha[i]=0;
     }
 }
 
@@ -279,7 +288,6 @@ void data::start_database()
 {
     for(int i =0; i<JUM_KANAL; i++)//8
     {
-       // qDebug()<<cnt_cha[i];
         if(cnt_ch[i] < spektrum_points)
         {
             threadku->safe_to_save_ch[i] = 0;
@@ -303,7 +311,6 @@ void data::start_database()
         for(int i =0; i<JUM_KANAL; i++)//8
         {
             cnt_ch[i] =0;
-           // cnt_cha[i] =0;
         }
        qDebug()<<"data save ";
 }

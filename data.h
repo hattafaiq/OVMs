@@ -42,6 +42,7 @@ public:
 Q_SIGNALS:
     void closed();
     void trig_client();
+    void kirim();
 
 public slots:
     void readyReady(); //(QByteArray datagram);//data tidak mau masuk
@@ -88,7 +89,7 @@ private:
 
     int counterCH1;
     ///
-    int pernah_penuh;
+    //int pernah_penuh;
     //timer
     QTimer *timer;
     QTimer *timera;
@@ -120,6 +121,25 @@ private:
     threader *threadku;
     database *dbase;
     int count_db;
+    //----------------------------------------------//
+    int pernah_penuh[JUM_KANAL];
+    int paket_datang[JUM_KANAL];
+    int counter_paket[JUM_KANAL];
+
+    int penuh_vel1[JUM_KANAL];
+    int paket_vel1[JUM_KANAL];
+    int counter_vel1[JUM_KANAL];
+
+    int penuh_hpf[JUM_KANAL];
+    int paket_hpf[JUM_KANAL];
+    int counter_hpf[JUM_KANAL];
+
+    int syarat_data;
+    int paket_diharapkan;
+    int datasyarat;
+
+    int modul_1_penuh;
+    int modul_2_penuh;
 
 
 };
