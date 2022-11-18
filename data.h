@@ -30,30 +30,24 @@ public:
     void req_UDP();
     virtual ~data();
     unsigned short spsX;
-    struct kirim kri;
+    struct kirim_fmax1000 fmax_1000;
+    struct kirim_fmax4000 fmax_4000;
     struct kirims kris;
+    QString pesan_topik;
+    int xsps;
     void set_memory();
     void free_memory();
     void init_setting(init_setting_k *Temp);
     void cek_settings(init_setting_k *Temp);
-    //struct init_setting_k *Temp;
-    QVector<float> y_bisa[8][3840];
 
 Q_SIGNALS:
     void closed();
-    void trig_client();
-    void kirim();
 
 public slots:
     void readyReady(); //(QByteArray datagram);//data tidak mau masuk
     void init_time();
     void refresh_plot();
-    void datamanagement();
     void start_database();
-    void flagdatabase();
-    void flagclient();
-
-
 
 private slots:
     void onNewConnection();
@@ -61,7 +55,6 @@ private slots:
     void socketDisconnected();
     void showTime();
     void sendDataClient1(QByteArray isipesan);
-   // void sendDataClient2(QString isipesan2);
 
 
 private:
@@ -81,16 +74,13 @@ private:
     int paket_dikirim;
     float *data_save[JUM_KANAL];
     float *data_get[JUM_KANAL];
-    //float *data_prekirim[8];
     float *data_prekirim[JUM_KANAL];
     int x1[set_up];
     int cnt_ch[JUM_KANAL];
     int cnt_cha[JUM_KANAL];
 
-    int counterCH1;
+    int counterCH;
     ///
-    //int pernah_penuh;
-    //timer
     QTimer *timer;
     QTimer *timera;
     QTimer *TMclient;
@@ -115,6 +105,7 @@ private:
     quint16 senderPort;
     QHostAddress sendera;
     QUdpSocket *socket;
+    QUdpSocket *cek_koneksi;
     int tim_count;
     // inisial data
     double *data_y_voltage[JUM_KANAL];
@@ -122,18 +113,6 @@ private:
     database *dbase;
     int count_db;
     //----------------------------------------------//
-    int pernah_penuh[JUM_KANAL];
-    int paket_datang[JUM_KANAL];
-    int counter_paket[JUM_KANAL];
-
-    int penuh_vel1[JUM_KANAL];
-    int paket_vel1[JUM_KANAL];
-    int counter_vel1[JUM_KANAL];
-
-    int penuh_hpf[JUM_KANAL];
-    int paket_hpf[JUM_KANAL];
-    int counter_hpf[JUM_KANAL];
-
     int syarat_data;
     int paket_diharapkan;
     int datasyarat;

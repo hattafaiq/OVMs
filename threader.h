@@ -15,7 +15,7 @@ public:
     QByteArray bb1[JUM_KANAL];
     int num;
     int fmax;
-    int ref_rpm;//[JUM_PLOT];
+    int ref_rpm;
     int safe_to_save_ch[JUM_KANAL];
 };
 

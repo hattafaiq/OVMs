@@ -6,9 +6,6 @@ extern struct d_global global;
 data::data(QObject *parent) : QObject(parent)
 {
   threadku = new threader();
-  //spektrum_points = 6144;
-  panjang_buffer_waveform= 10 * 10240 ;
-  panjang_buffer_spektrum = MAX_FFT_POINT;
   Temp = new init_setting_k;
     QFile input("/home/fh/Server_OVM/setting.ini");
     if(input.exists())
@@ -23,7 +20,7 @@ data::data(QObject *parent) : QObject(parent)
    // pernah_penuh = 0;
     flagsave=0;
     flagtimestart=0;
-    counterCH1=0;
+    counterCH=0;
     kirimclient = 0;
     spektrum_points = 2.56 * Temp->line_dbSpect;
     //INIT_udp
@@ -71,7 +68,6 @@ void data::cek_settings(init_setting_k *Temp)
 {
     QString pth = "/home/fh/Server_OVM/setting.ini";
     QSettings settings(pth, QSettings::IniFormat);
-    tmp.dir_ini = settings.value("Dir_ini").toString();
     tmp.modulIP1k = settings.value("IP1").toString();
     tmp.modulIP2k = settings.value("IP2").toString();
     Temp->fmax = settings.value("Fmax").toInt() ;
@@ -82,15 +78,6 @@ void data::cek_settings(init_setting_k *Temp)
     tmp.dir_DB = settings.value("Dir_DB").toString();
 }
 
-void data::flagdatabase()
-{
-
-}
-
-void data::flagclient()
-{
-
-}
 
 void data::init_setting(init_setting_k *Temp)
 {
@@ -109,7 +96,6 @@ void data::init_setting(init_setting_k *Temp)
     Temp->timereq = 2;
     Temp->timerclient = 1;
     settings.setValue("TimeClien",Temp->timerclient);
-    settings.setValue("Dir_ini", tmp.dir_ini);
     settings.setValue("IP1",tmp.modulIP1k);
     settings.setValue("IP2",tmp.modulIP2k);
     settings.setValue("Dir_DB",tmp.dir_DB);
@@ -124,15 +110,12 @@ void data::set_memory()
     int i;
     for (i=0; i<JUM_KANAL; i++)
     {
-        pernah_penuh[i]=0;
-        datasyarat= 2560;
-
-        data_save[i] = (float *) malloc(((2560*JUM_KANAL)*10) * sizeof(float));
-        memset( (char *) data_save[i], 0, (((2560*JUM_KANAL)*10)*sizeof(float)));
-        data_get[i] = (float *) malloc(((2560*JUM_KANAL)*10) * sizeof(float));
-        memset( (char *) data_get[i], 0, ((2560*JUM_KANAL)*10) * sizeof(float));
-        data_prekirim[i] = (float *) malloc(((2560*JUM_KANAL)*10) * sizeof(float));
-        memset( (char *) data_prekirim[i], 0, ((2560*JUM_KANAL)*10) * sizeof(float));
+        data_save[i] = (float *) malloc(((sps_fmax4000*JUM_KANAL)*5) * sizeof(float));
+        memset( (char *) data_save[i], 0, (((sps_fmax4000*JUM_KANAL)*5)*sizeof(float)));
+        data_get[i] = (float *) malloc(((sps_fmax4000*JUM_KANAL)*5) * sizeof(float));
+        memset( (char *) data_get[i], 0, ((sps_fmax4000*JUM_KANAL)*5) * sizeof(float));
+        data_prekirim[i] = (float *) malloc(((sps_fmax4000*JUM_KANAL)*5) * sizeof(float));
+        memset( (char *) data_prekirim[i], 0, ((sps_fmax4000*JUM_KANAL)*5) * sizeof(float));
     }
 }
 
@@ -148,9 +131,7 @@ void data::init_time()
     QObject::connect(timera,SIGNAL(timeout()),this, SLOT(start_database()));
     timera->start(5000);
     TMclient = new QTimer(this);
-    //QObject::connect(TMclient,SIGNAL(timeout()),this, SLOT(datamanagement()));
-    //TMclient->start(1000);
-    QObject::connect(this,SIGNAL(kirim()),this,SLOT(datamanagement()));
+    //QObject::connect(this,SIGNAL(kirim()),this,SLOT(datamanagement()));
 }
 
 void data::req_UDP()
@@ -177,8 +158,7 @@ void data::readyReady()
     float *p_data;
     int i_kanal;
     int req;
-    int xsps;
-    int i,y;
+    int i;
 
     while (socket->hasPendingDatagrams())
     {
@@ -192,10 +172,8 @@ void data::readyReady()
          req = p_req2->request_sample;
          i_kanal = p_req2->cur_kanal;
          xsps = p_req2->sps;
-
-        // syarat_data = p_req2->sps/PAKET_BUFF;
-       //  qDebug()<<"syarat data: "<<syarat_data;
-
+         fmax_1000.info_sps = p_req2->sps;
+         fmax_4000.info_sps = p_req2->sps;
          int no_module = -1;
 
          if(sendera.toIPv4Address() == ip_modul_1.toIPv4Address())
@@ -205,7 +183,7 @@ void data::readyReady()
          else if(sendera.toIPv4Address() == ip_modul_2.toIPv4Address())
          {
              i_kanal = i_kanal+4;
-             no_module = 1;
+             no_module = 1;      
          }
          ////////////////////////////////////////////////////////////////////////////////////////////////////////////
          for (i=0; i<PAKET_BUFF; i++)
@@ -214,51 +192,89 @@ void data::readyReady()
           data_save[i_kanal][cnt_ch[i_kanal]] = p_data[i];
           cnt_cha[i_kanal]++;
           data_prekirim[i_kanal][cnt_cha[i_kanal]] = p_data[i];
-         // kris.k1[i_kanal][cnt_cha[i_kanal]] = p_data[i];
         }
-         //memcpy(kris.k1[i_kanal],&data_prekirim[i_kanal][1],256 * (sizeof(float)));
-         ////////////////////////////////////////////////////////////////////////////////////////////////////
+
     }// while
-    if(cnt_cha[3]==2560)
+    if(xsps==sps_fmax1000)
     {
-        modul_1_penuh=1;
-        memcpy(kri.k1, &data_prekirim[0][1], 2560 * (sizeof(float)));
-        memcpy(kri.k2, &data_prekirim[1][1], 2560 * (sizeof(float)));
-        memcpy(kri.k3, &data_prekirim[2][1], 2560 * (sizeof(float)));
-        memcpy(kri.k4, &data_prekirim[3][1], 2560 * (sizeof(float)));
-    }
-    else if(cnt_cha[7]==2560)
-    {
-        modul_2_penuh=1;
-        memcpy(kri.k5, &data_prekirim[4][1], 2560 * (sizeof(float)));
-        memcpy(kri.k6, &data_prekirim[5][1], 2560 * (sizeof(float)));
-        memcpy(kri.k7, &data_prekirim[6][1], 2560 * (sizeof(float)));
-        memcpy(kri.k8, &data_prekirim[7][1], 2560 * (sizeof(float)));
+        if(cnt_cha[3]==sps_fmax1000)
+        {
+            modul_1_penuh=1;
+            memcpy(fmax_1000.k1, &data_prekirim[0][1], sps_fmax1000 * (sizeof(float)));
+            memcpy(fmax_1000.k2, &data_prekirim[1][1], sps_fmax1000 * (sizeof(float)));
+            memcpy(fmax_1000.k3, &data_prekirim[2][1], sps_fmax1000 * (sizeof(float)));
+            memcpy(fmax_1000.k4, &data_prekirim[3][1], sps_fmax1000 * (sizeof(float)));
+         }
+         else if(cnt_cha[7]==sps_fmax1000)
+         {
+            modul_2_penuh=1;
+            memcpy(fmax_1000.k5, &data_prekirim[4][1], sps_fmax1000 * (sizeof(float)));
+            memcpy(fmax_1000.k6, &data_prekirim[5][1], sps_fmax1000 * (sizeof(float)));
+            memcpy(fmax_1000.k7, &data_prekirim[6][1], sps_fmax1000 * (sizeof(float)));
+            memcpy(fmax_1000.k8, &data_prekirim[7][1], sps_fmax1000 * (sizeof(float)));
+          }
+     }
+     else
+     {
+        if(cnt_cha[3]==sps_fmax4000)
+        {
+            modul_1_penuh=1;
+            memcpy(fmax_4000.k1, &data_prekirim[0][1], sps_fmax4000 * (sizeof(float)));
+            memcpy(fmax_4000.k2, &data_prekirim[1][1], sps_fmax4000 * (sizeof(float)));
+            memcpy(fmax_4000.k3, &data_prekirim[2][1], sps_fmax4000 * (sizeof(float)));
+            memcpy(fmax_4000.k4, &data_prekirim[3][1], sps_fmax4000 * (sizeof(float)));
+            fmax_4000.modul_aktif = 1;
+         }
+         else if(cnt_cha[7]==sps_fmax4000)
+         {
+            modul_2_penuh=1;
+            memcpy(fmax_4000.k5, &data_prekirim[4][1], sps_fmax4000 * (sizeof(float)));
+            memcpy(fmax_4000.k6, &data_prekirim[5][1], sps_fmax4000 * (sizeof(float)));
+            memcpy(fmax_4000.k7, &data_prekirim[6][1], sps_fmax4000 * (sizeof(float)));
+            memcpy(fmax_4000.k8, &data_prekirim[7][1], sps_fmax4000 * (sizeof(float)));
+            fmax_4000.modul_aktif = 2;
+          }
     }
 
-    if((modul_1_penuh&&modul_2_penuh)||(modul_1_penuh&&!modul_2_penuh))
+    if((modul_1_penuh&&!modul_2_penuh)||(modul_1_penuh&&modul_2_penuh))
     {
         qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kemas";
-        QByteArray datagrama = QByteArray(static_cast<char*>((void*)&kri), sizeof(kri));
-
-        sendDataClient1(datagrama);
-        qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kirim";
-        for(i =0; i<JUM_KANAL; i++)//8
+        if(xsps==sps_fmax1000)
         {
-            qDebug()<<" kanal data= "<<cnt_cha[i];
-            cnt_cha[i]=0;
+            if(modul_1_penuh){
+                fmax_1000.modul_aktif =1;
+            }
+            if(modul_2_penuh){
+                fmax_1000.modul_aktif =2;
+            }
+            QByteArray datagrama = QByteArray(static_cast<char*>((void*)&fmax_1000), sizeof(fmax_1000));
+            sendDataClient1(datagrama);
+            qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kirim";
+            for(i =0; i<JUM_KANAL; i++)//8
+            {
+                qDebug()<<" kanal data= "<<cnt_cha[i];
+                cnt_cha[i]=0;
+            }
+            modul_1_penuh=0;
+            modul_2_penuh=0;
         }
-      //  emit kirim();
-        modul_1_penuh=0;
-        modul_2_penuh=0;
+        else
+        {
+            QByteArray datagrama = QByteArray(static_cast<char*>((void*)&fmax_4000), sizeof(fmax_4000));
+            sendDataClient1(datagrama);
+            qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kirim";
+            for(i =0; i<JUM_KANAL; i++)//8
+            {
+                qDebug()<<" kanal data= "<<cnt_cha[i];
+                cnt_cha[i]=0;
+            }
+            modul_1_penuh=0;
+            modul_2_penuh=0;
+        }
+
     }
 }//void
 
-
-void data::datamanagement()
-{
-
-}
 
 void data::start_database()
 {
@@ -289,6 +305,17 @@ void data::start_database()
             cnt_ch[i] =0;
         }
        qDebug()<<"data save ";
+//       cek_koneksi = new QUdpSocket(this);
+//       qDebug()<<"status udp: "<<cek_koneksi->state();
+//       if(cek_koneksi->state() == cek_koneksi->UnconnectedState)
+//       {
+//            QByteArray info_udp;
+//            QString los= "udp_loss";
+//            info_udp += los;
+//            sendDataClient1(info_udp);
+//            qDebug()<<"send to client data loss";
+//       }
+//       cek_koneksi->deleteLater();
 }
 
 void data::refresh_plot()
@@ -309,14 +336,18 @@ void data::processMessage(QByteArray message)
     QWebSocket *C_NewReq = qobject_cast<QWebSocket *>(sender());
        // qDebug()<<message;
 
-    QByteArray ba1;
-    QByteArray bal1;
+    QByteArray ba1;;
     QByteArray unsub;
     QString unsub_wave1 ="unsub";
-    QString wave1 ="wave1";
-    QString wave2 ="wave2";
-    ba1 += wave1;
-    bal1 += wave2;
+    if(xsps==2560)
+    {
+       pesan_topik ="fmax1000";
+    }
+    else
+    {
+        pesan_topik ="fmax4000";
+    }
+    ba1 += pesan_topik;
     unsub += unsub_wave1;
 
     if((C_NewReq)&&(message==ba1))

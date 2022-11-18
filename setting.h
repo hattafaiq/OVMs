@@ -39,6 +39,9 @@
 #define PORT_CILIWUNG_RECV       5007
 #define PORT_CILIWUNG_DATA       5008
 
+#define sps_fmax1000 2560
+#define sps_fmax4000 10240
+
 
 struct tt_req2 {
     char head[10];
@@ -73,26 +76,37 @@ struct filepesan
     unsigned char a;
 };
 
-struct kirim
+struct kirim_fmax1000
 {
-     //char IP[27];
-     //unsigned char kanal1;
-     //float a[20480];
-    float k1[2560];
-    float k2[2560];
-    float k3[2560];
-    float k4[2560];
-    float k5[2560];
-    float k6[2560];
-    float k7[2560];
-    float k8[2560];
-    //int x1[set_up];
+    float k1[sps_fmax1000];
+    float k2[sps_fmax1000];
+    float k3[sps_fmax1000];
+    float k4[sps_fmax1000];
+    float k5[sps_fmax1000];
+    float k6[sps_fmax1000];
+    float k7[sps_fmax1000];
+    float k8[sps_fmax1000];
+    int info_sps;
+    int modul_aktif;
+};
+
+struct kirim_fmax4000
+{
+    float k1[sps_fmax4000];
+    float k2[sps_fmax4000];
+    float k3[sps_fmax4000];
+    float k4[sps_fmax4000];
+    float k5[sps_fmax4000];
+    float k6[sps_fmax4000];
+    float k7[sps_fmax4000];
+    float k8[sps_fmax4000];
+    int info_sps;
+    int modul_aktif;
 };
 
 struct kirims
 {
     float k1[JUM_KANAL][2560];
-   // int x1[set_up];
 };
 
 #endif // SETTING_H
