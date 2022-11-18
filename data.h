@@ -49,12 +49,14 @@ public slots:
     void refresh_plot();
     void start_database();
 
+
 private slots:
     void onNewConnection();
     void processMessage(QByteArray message);
     void socketDisconnected();
     void showTime();
     void sendDataClient1(QByteArray isipesan);
+    void data_kirim();
 
 
 private:

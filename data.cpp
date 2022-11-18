@@ -131,6 +131,8 @@ void data::init_time()
     QObject::connect(timera,SIGNAL(timeout()),this, SLOT(start_database()));
     timera->start(5000);
     TMclient = new QTimer(this);
+    QObject::connect(TMclient,SIGNAL(timeout()),this, SLOT(data_kirim()));
+    TMclient->start(1000);
     //QObject::connect(this,SIGNAL(kirim()),this,SLOT(datamanagement()));
 }
 
@@ -195,85 +197,106 @@ void data::readyReady()
         }
 
     }// while
-    if(xsps==sps_fmax1000)
-    {
-        if(cnt_cha[3]==sps_fmax1000)
-        {
-            modul_1_penuh=1;
-            memcpy(fmax_1000.k1, &data_prekirim[0][1], sps_fmax1000 * (sizeof(float)));
-            memcpy(fmax_1000.k2, &data_prekirim[1][1], sps_fmax1000 * (sizeof(float)));
-            memcpy(fmax_1000.k3, &data_prekirim[2][1], sps_fmax1000 * (sizeof(float)));
-            memcpy(fmax_1000.k4, &data_prekirim[3][1], sps_fmax1000 * (sizeof(float)));
-         }
-         else if(cnt_cha[7]==sps_fmax1000)
-         {
-            modul_2_penuh=1;
-            memcpy(fmax_1000.k5, &data_prekirim[4][1], sps_fmax1000 * (sizeof(float)));
-            memcpy(fmax_1000.k6, &data_prekirim[5][1], sps_fmax1000 * (sizeof(float)));
-            memcpy(fmax_1000.k7, &data_prekirim[6][1], sps_fmax1000 * (sizeof(float)));
-            memcpy(fmax_1000.k8, &data_prekirim[7][1], sps_fmax1000 * (sizeof(float)));
-          }
-     }
-     else
-     {
-        if(cnt_cha[3]==sps_fmax4000)
-        {
-            modul_1_penuh=1;
-            memcpy(fmax_4000.k1, &data_prekirim[0][1], sps_fmax4000 * (sizeof(float)));
-            memcpy(fmax_4000.k2, &data_prekirim[1][1], sps_fmax4000 * (sizeof(float)));
-            memcpy(fmax_4000.k3, &data_prekirim[2][1], sps_fmax4000 * (sizeof(float)));
-            memcpy(fmax_4000.k4, &data_prekirim[3][1], sps_fmax4000 * (sizeof(float)));
-            fmax_4000.modul_aktif = 1;
-         }
-         else if(cnt_cha[7]==sps_fmax4000)
-         {
-            modul_2_penuh=1;
-            memcpy(fmax_4000.k5, &data_prekirim[4][1], sps_fmax4000 * (sizeof(float)));
-            memcpy(fmax_4000.k6, &data_prekirim[5][1], sps_fmax4000 * (sizeof(float)));
-            memcpy(fmax_4000.k7, &data_prekirim[6][1], sps_fmax4000 * (sizeof(float)));
-            memcpy(fmax_4000.k8, &data_prekirim[7][1], sps_fmax4000 * (sizeof(float)));
-            fmax_4000.modul_aktif = 2;
-          }
-    }
+//    if(xsps==sps_fmax1000)
+//    {
+//        if(cnt_cha[3]==sps_fmax1000)
+//        {
+//            modul_1_penuh=1;
+//            memcpy(fmax_1000.k1, &data_prekirim[0][1], sps_fmax1000 * (sizeof(float)));
+//            memcpy(fmax_1000.k2, &data_prekirim[1][1], sps_fmax1000 * (sizeof(float)));
+//            memcpy(fmax_1000.k3, &data_prekirim[2][1], sps_fmax1000 * (sizeof(float)));
+//            memcpy(fmax_1000.k4, &data_prekirim[3][1], sps_fmax1000 * (sizeof(float)));
+//         }
+//         else if(cnt_cha[7]==sps_fmax1000)
+//         {
+//            modul_2_penuh=1;
+//            memcpy(fmax_1000.k5, &data_prekirim[4][1], sps_fmax1000 * (sizeof(float)));
+//            memcpy(fmax_1000.k6, &data_prekirim[5][1], sps_fmax1000 * (sizeof(float)));
+//            memcpy(fmax_1000.k7, &data_prekirim[6][1], sps_fmax1000 * (sizeof(float)));
+//            memcpy(fmax_1000.k8, &data_prekirim[7][1], sps_fmax1000 * (sizeof(float)));
+//          }
+//     }
+//     else
+//     {
+//        if(cnt_cha[3]==sps_fmax4000)
+//        {
+//            modul_1_penuh=1;
+//            memcpy(fmax_4000.k1, &data_prekirim[0][1], sps_fmax4000 * (sizeof(float)));
+//            memcpy(fmax_4000.k2, &data_prekirim[1][1], sps_fmax4000 * (sizeof(float)));
+//            memcpy(fmax_4000.k3, &data_prekirim[2][1], sps_fmax4000 * (sizeof(float)));
+//            memcpy(fmax_4000.k4, &data_prekirim[3][1], sps_fmax4000 * (sizeof(float)));
+//            fmax_4000.modul_aktif = 1;
+//         }
+//         else if(cnt_cha[7]==sps_fmax4000)
+//         {
+//            modul_2_penuh=1;
+//            memcpy(fmax_4000.k5, &data_prekirim[4][1], sps_fmax4000 * (sizeof(float)));
+//            memcpy(fmax_4000.k6, &data_prekirim[5][1], sps_fmax4000 * (sizeof(float)));
+//            memcpy(fmax_4000.k7, &data_prekirim[6][1], sps_fmax4000 * (sizeof(float)));
+//            memcpy(fmax_4000.k8, &data_prekirim[7][1], sps_fmax4000 * (sizeof(float)));
+//            fmax_4000.modul_aktif = 2;
+//          }
+//    }
 
-    if((modul_1_penuh&&!modul_2_penuh)||(modul_1_penuh&&modul_2_penuh))
-    {
-        qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kemas";
-        if(xsps==sps_fmax1000)
-        {
-            if(modul_1_penuh){
-                fmax_1000.modul_aktif =1;
-            }
-            if(modul_2_penuh){
-                fmax_1000.modul_aktif =2;
-            }
-            QByteArray datagrama = QByteArray(static_cast<char*>((void*)&fmax_1000), sizeof(fmax_1000));
-            sendDataClient1(datagrama);
-            qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kirim";
-            for(i =0; i<JUM_KANAL; i++)//8
-            {
-                qDebug()<<" kanal data= "<<cnt_cha[i];
-                cnt_cha[i]=0;
-            }
-            modul_1_penuh=0;
-            modul_2_penuh=0;
-        }
-        else
-        {
-            QByteArray datagrama = QByteArray(static_cast<char*>((void*)&fmax_4000), sizeof(fmax_4000));
-            sendDataClient1(datagrama);
-            qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kirim";
-            for(i =0; i<JUM_KANAL; i++)//8
-            {
-                qDebug()<<" kanal data= "<<cnt_cha[i];
-                cnt_cha[i]=0;
-            }
-            modul_1_penuh=0;
-            modul_2_penuh=0;
-        }
+//    if((modul_1_penuh&&!modul_2_penuh)||(modul_1_penuh&&modul_2_penuh))
+//    {
+//        qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kemas";
+//        if(xsps==sps_fmax1000)
+//        {
+//            if(modul_1_penuh){
+//                fmax_1000.modul_aktif =1;
+//            }
+//            if(modul_2_penuh){
+//                fmax_1000.modul_aktif =2;
+//            }
+//            QByteArray datagrama = QByteArray(static_cast<char*>((void*)&fmax_1000), sizeof(fmax_1000));
+//            sendDataClient1(datagrama);
+//            qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kirim";
+//            for(i =0; i<JUM_KANAL; i++)//8
+//            {
+//                qDebug()<<" kanal data= "<<cnt_cha[i];
+//                cnt_cha[i]=0;
+//            }
+//            modul_1_penuh=0;
+//            modul_2_penuh=0;
+//        }
+//        else
+//        {
+//            QByteArray datagrama = QByteArray(static_cast<char*>((void*)&fmax_4000), sizeof(fmax_4000));
+//            sendDataClient1(datagrama);
+//            qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kirim";
+//            for(i =0; i<JUM_KANAL; i++)//8
+//            {
+//                qDebug()<<" kanal data= "<<cnt_cha[i];
+//                cnt_cha[i]=0;
+//            }
+//            modul_1_penuh=0;
+//            modul_2_penuh=0;
+//        }
 
-    }
+//    }
 }//void
+
+void data::data_kirim()
+{
+    memcpy(fmax_1000.k1, &data_prekirim[0][1], sps_fmax1000 * (sizeof(float)));
+    memcpy(fmax_1000.k2, &data_prekirim[1][1], sps_fmax1000 * (sizeof(float)));
+    memcpy(fmax_1000.k3, &data_prekirim[2][1], sps_fmax1000 * (sizeof(float)));
+    memcpy(fmax_1000.k4, &data_prekirim[3][1], sps_fmax1000 * (sizeof(float)));
+    memcpy(fmax_1000.k5, &data_prekirim[4][1], sps_fmax1000 * (sizeof(float)));
+    memcpy(fmax_1000.k6, &data_prekirim[5][1], sps_fmax1000 * (sizeof(float)));
+    memcpy(fmax_1000.k7, &data_prekirim[6][1], sps_fmax1000 * (sizeof(float)));
+    memcpy(fmax_1000.k8, &data_prekirim[7][1], sps_fmax1000 * (sizeof(float)));
+    QByteArray datagrama = QByteArray(static_cast<char*>((void*)&fmax_1000), sizeof(fmax_1000));
+    sendDataClient1(datagrama);
+    qDebug()<<QDateTime::currentMSecsSinceEpoch()<<"kirim";
+    for(int i =0; i<JUM_KANAL; i++)//8
+    {
+        qDebug()<<" kanal data= "<<cnt_cha[i];
+        cnt_cha[i]=0;
+    }
+}
+
 
 
 void data::start_database()
@@ -374,6 +397,7 @@ void data::sendDataClient1(QByteArray isipesan)
         pClientkirim->sendBinaryMessage(isipesan);
     }
 }
+
 
 void data::socketDisconnected()
 {
