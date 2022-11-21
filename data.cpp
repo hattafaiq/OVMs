@@ -273,7 +273,6 @@ void data::readyReady()
             modul_1_penuh=0;
             modul_2_penuh=0;
         }
-
     }
 }//void
 
@@ -328,17 +327,8 @@ void data::start_database()
             cnt_ch[i] =0;
         }
        qDebug()<<"data save ";
-//       cek_koneksi = new QUdpSocket(this);
-//       qDebug()<<"status udp: "<<cek_koneksi->state();
-//       if(cek_koneksi->state() == cek_koneksi->UnconnectedState)
-//       {
-//            QByteArray info_udp;
-//            QString los= "udp_loss";
-//            info_udp += los;
-//            sendDataClient1(info_udp);
-//            qDebug()<<"send to client data loss";
-//       }
-//       cek_koneksi->deleteLater();
+//       qDebug()<<"status socket"<<socket->state();
+
 }
 
 void data::refresh_plot()
@@ -384,6 +374,9 @@ void data::processMessage(QByteArray message)
         Subcribe_wave1.removeOne(C_NewReq);
         qDebug()<<"unsub scribe dari:"<<C_NewReq->peerAddress().toString();
     }
+
+//    qDebug()<<"data masuk "<<data_prekirim[0][10]<<"  "<<data_prekirim[0][20];
+//    qDebug()<<"last data check"<<last_data_check1 << " "<<last_data_check2;
 
 }
 

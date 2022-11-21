@@ -61,6 +61,8 @@ private slots:
 
 private:
     //
+    float last_data_check1;
+    float last_data_check2;
     QVector <float> vec;
     struct init_setting_k tmp, *Temp;
     int flagsave;
