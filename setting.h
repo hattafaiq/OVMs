@@ -5,6 +5,8 @@
 #include <QSqlDatabase>
 #include <QHostAddress>
 
+#define alamat "/OVMSsetting.ini"
+
 //#define SUMBU_FONT  "Helvetica"
 #define set_up          3840//5120
 #define JUM_MODULE      2

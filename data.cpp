@@ -2,19 +2,19 @@
 #include "setting.h"
 
 extern struct d_global global;
+struct init_setting_k tmp;
 
 data::data(QObject *parent) : QObject(parent)
 {
   threadku = new threader();
-  Temp = new init_setting_k;
-    QFile input("/home/fh/Server_OVM/setting.ini");
+    QFile input(QStandardPaths::writableLocation(QStandardPaths::DataLocation)+alamat);
     if(input.exists())
     {
-       cek_settings(Temp);
+       cek_settings();
     }
     else
     {
-       init_setting(Temp);
+       init_setting();
     }
     count_db = 1;
    // pernah_penuh = 0;
@@ -22,7 +22,6 @@ data::data(QObject *parent) : QObject(parent)
     flagtimestart=0;
     counterCH=0;
     kirimclient = 0;
-    spektrum_points = 2.56 * Temp->line_dbSpect;
     //INIT_udp
     socket = new QUdpSocket(this);
     qDebug()<<"status awal "<<socket->state();
@@ -36,7 +35,7 @@ data::data(QObject *parent) : QObject(parent)
     connect(m_pWebSocketServer1, SIGNAL(newConnection()),this, SLOT(onNewConnection()));
     connect(m_pWebSocketServer1, &QWebSocketServer::closed, this, &data::closed);
     //INIT_database
-    dbase->check_db_exist(tmp.dir_DB,count_db);
+    dbase->check_db_exist(QStandardPaths::writableLocation(QStandardPaths::DataLocation)+tmp.dir_DB,count_db);
 
     set_memory();
     for(int i =0; i<JUM_KANAL;i++)
@@ -64,45 +63,41 @@ void data::free_memory()
         free(data_prekirim[i]);
     }
 }
-void data::cek_settings(init_setting_k *Temp)
+void data::cek_settings()
 {
-    QString pth = "/home/fh/Server_OVM/setting.ini";
+    QString pth = QStandardPaths::writableLocation(QStandardPaths::DataLocation)+alamat;
+    qDebug()<<"alamat db :" << pth;
     QSettings settings(pth, QSettings::IniFormat);
     tmp.modulIP1k = settings.value("IP1").toString();
     tmp.modulIP2k = settings.value("IP2").toString();
-    Temp->fmax = settings.value("Fmax").toInt() ;
-    Temp->timerdbk = settings.value("TimeSaveDB").toInt();
-    Temp->timereq = settings.value("TimeReq").toInt();
-    Temp->timerclient = settings.value("TimeClien").toInt();
-    Temp->line_dbSpect = settings.value("Lines").toInt();
+    tmp.fmax = settings.value("Fmax").toInt() ;
+    tmp.timerdbk = settings.value("TimeSaveDB").toInt();
+    tmp.timereq = settings.value("TimeReq").toInt();
     tmp.dir_DB = settings.value("Dir_DB").toString();
 }
 
 
-void data::init_setting(init_setting_k *Temp)
+void data::init_setting()
 {
-    QString pth = "/home/fh/Server_OVM/setting.ini";
+    QString pth = QStandardPaths::writableLocation(QStandardPaths::DataLocation)+alamat;
+     qDebug()<<"alamat db :" << pth;
     QSettings settings(pth, QSettings::IniFormat);
     qDebug()<<"tulis";
 
-    memset((char *) Temp, 0, sizeof (struct init_setting_k));
-    tmp.dir_DB = QString::fromUtf8("/home/fh/Server_OVM/ovm_dbe");
+  //  memset((char *) Temp, 0, sizeof (struct init_setting_k));
+    tmp.dir_DB = QString::fromUtf8("/ovm_dbe");
     tmp.modulIP1k = QString::fromUtf8("192.168.0.101");
     tmp.modulIP2k = QString::fromUtf8("192.168.0.102");
 
-    Temp->line_dbSpect = 800;
-    Temp->fmax= 1000;
-    Temp->timerdbk =5;
-    Temp->timereq = 2;
-    Temp->timerclient = 1;
-    settings.setValue("TimeClien",Temp->timerclient);
+    tmp.fmax= 1000;
+    tmp.timerdbk =5;
+    tmp.timereq = 2;
     settings.setValue("IP1",tmp.modulIP1k);
     settings.setValue("IP2",tmp.modulIP2k);
     settings.setValue("Dir_DB",tmp.dir_DB);
-    settings.setValue("Lines",Temp->line_dbSpect);
-    settings.setValue("Fmax",Temp->fmax);
-    settings.setValue("TimeSaveDB",Temp->timerdbk);
-    settings.setValue("TimeReq",Temp->timereq);
+    settings.setValue("Fmax",tmp.fmax);
+    settings.setValue("TimeSaveDB",tmp.timerdbk);
+    settings.setValue("TimeReq",tmp.timereq);
 }
 
 void data::set_memory()
@@ -126,14 +121,10 @@ void data::init_time()
     modul_2_penuh=0;
     timer = new QTimer(this);
     QObject::connect(timer,SIGNAL(timeout()),this, SLOT(refresh_plot()));
-    timer->start(Temp->timereq*1100);
+    timer->start(tmp.timereq*1100);
     timera = new QTimer(this);
     QObject::connect(timera,SIGNAL(timeout()),this, SLOT(start_database()));
-    timera->start(5000);
-    TMclient = new QTimer(this);
-//    QObject::connect(TMclient,SIGNAL(timeout()),this, SLOT(data_kirim()));
-//    TMclient->start(1000);
-    //QObject::connect(this,SIGNAL(kirim()),this,SLOT(datamanagement()));
+    timera->start(tmp.timerdbk*1000);
 }
 
 void data::req_UDP()
@@ -316,7 +307,7 @@ void data::start_database()
         threadku->bb1[i] = array0;
         threadku->ref_rpm = 6000;
         threadku->num = spektrum_points;
-        threadku->fmax = Temp->fmax;
+        threadku->fmax = tmp.fmax;
 
         threadku->start();
 

@@ -37,8 +37,8 @@ public:
     int xsps;
     void set_memory();
     void free_memory();
-    void init_setting(init_setting_k *Temp);
-    void cek_settings(init_setting_k *Temp);
+    void init_setting();
+    void cek_settings();
 
 Q_SIGNALS:
     void closed();
@@ -64,7 +64,6 @@ private:
     float last_data_check1;
     float last_data_check2;
     QVector <float> vec;
-    struct init_setting_k tmp, *Temp;
     int flagsave;
     int flagtimestart;
 
